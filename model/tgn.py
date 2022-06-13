@@ -50,6 +50,9 @@ class TGN(torch.nn.Module):
     self.memory = None
     self.mem_node_prob = mem_node_prob
 
+    #js)
+    self.old_positive = list(range(self.n_nodes))
+    
     self.mean_time_shift_src = mean_time_shift_src
     self.std_time_shift_src = std_time_shift_src
     self.mean_time_shift_dst = mean_time_shift_dst
@@ -135,8 +138,10 @@ class TGN(torch.nn.Module):
         # xzl: pull msgs of last batch, cal @memory which is used to cal emeddings 
         #       only after embeddings are cal, cal @memory again and persist it
         #     @self.memory.messages is from previous batch        
-        memory, last_update = self.get_updated_memory(list(range(self.n_nodes)),
+        memory, last_update = self.get_updated_memory(self.old_positive,
                                                       self.memory.messages)
+        self.old_positive=np.copy(positives)
+        
       else:
         # xzl: memory already updated at the end of last batch. now just retrieve it
         memory = self.memory.get_memory(list(range(self.n_nodes)))
@@ -348,3 +353,10 @@ class TGN(torch.nn.Module):
   def set_neighbor_finder(self, neighbor_finder):
     self.neighbor_finder = neighbor_finder
     self.embedding_module.neighbor_finder = neighbor_finder
+    
+  def memory_check(self,memory):
+    count=0
+    for i in range(len(memory)):
+      if sum(memory[i]!=0)!=0:
+        count=count + 1
+    return count
